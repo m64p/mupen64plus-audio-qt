@@ -153,6 +153,12 @@ EXPORT void CALL AiLenChanged( void )
 
         src_process(src_state, &data);
 
+        int min_latency = ((float)audio->format().sampleRate() * 0.020) * audio->format().bytesPerFrame();
+        if ((audio->bufferSize() - audio->bytesFree()) < min_latency)
+            audio->suspend();
+        else if (audio->state() == QAudio::SuspendedState)
+            audio->resume();
+
         int output_length = data.output_frames_gen * 8;
         if (output_length <= audio->bytesFree())
             audio_buffer->write((char*)output_buffer, output_length);
