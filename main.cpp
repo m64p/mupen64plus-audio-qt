@@ -26,6 +26,16 @@ EXPORT m64p_error CALL PluginStartup(m64p_dynlib_handle, void *, void (*)(void *
     if (l_PluginInit)
         return M64ERR_ALREADY_INIT;
 
+    QAudioFormat format;
+    // Set up the format, eg.
+    format.setSampleRate(48000);
+    format.setChannelCount(2);
+    format.setSampleSize(32);
+    format.setCodec("audio/pcm");
+    format.setByteOrder(QAudioFormat::LittleEndian);
+    format.setSampleType(QAudioFormat::Float);
+    audio = new QAudioOutput(format);
+
     l_PluginInit = 1;
     VolIsMuted = 0;
     ff = 0;
@@ -37,6 +47,8 @@ EXPORT m64p_error CALL PluginShutdown(void)
 {
     if (!l_PluginInit)
         return M64ERR_NOT_INIT;
+
+    audio->deleteLater();
 
     if (src_state) src_state = src_delete(src_state);
     src_state = NULL;
@@ -71,16 +83,6 @@ EXPORT m64p_error CALL PluginGetVersion(m64p_plugin_type *PluginType, int *Plugi
 
 void InitAudio()
 {
-    QAudioFormat format;
-    // Set up the format, eg.
-    format.setSampleRate(48000);
-    format.setChannelCount(2);
-    format.setSampleSize(32);
-    format.setCodec("audio/pcm");
-    format.setByteOrder(QAudioFormat::LittleEndian);
-    format.setSampleType(QAudioFormat::Float);
-    audio = new QAudioOutput(format);
-
     audio_buffer = audio->start();
 
     paused = 0;
@@ -93,7 +95,6 @@ void InitAudio()
 void CloseAudio()
 {
     audio->stop();
-    audio->deleteLater();
     if (src_state) src_state = src_delete(src_state);
     src_state = NULL;
 }
