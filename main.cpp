@@ -21,7 +21,7 @@ static SRC_STATE *src_state;
 static QAudioOutput* audio;
 static QIODevice* audio_buffer;
 
-EXPORT m64p_error CALL PluginStartup(m64p_dynlib_handle, void *, void (*DebugCallback)(void *, int, const char *))
+EXPORT m64p_error CALL PluginStartup(m64p_dynlib_handle, void *, void (*)(void *, int, const char *))
 {
     if (l_PluginInit)
         return M64ERR_ALREADY_INIT;
