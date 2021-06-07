@@ -75,7 +75,7 @@ void InitAudio()
     // Set up the format, eg.
     format.setSampleRate(48000);
     format.setChannelCount(2);
-    format.setSampleSize(8);
+    format.setSampleSize(32);
     format.setCodec("audio/pcm");
     format.setByteOrder(QAudioFormat::LittleEndian);
     format.setSampleType(QAudioFormat::Float);
