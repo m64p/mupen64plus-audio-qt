@@ -251,7 +251,7 @@ EXPORT void CALL VolumeSetLevel(int level)
         level = 0;
     else if (level > 100)
         level = 100;
-    audio->setVolume(float(level) / 100.0);
+    audio->setVolume((float)level / 100.0);
 }
 
 EXPORT const char * CALL VolumeGetString(void)
