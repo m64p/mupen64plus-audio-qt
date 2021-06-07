@@ -35,6 +35,7 @@ EXPORT m64p_error CALL PluginStartup(m64p_dynlib_handle, void *, void (*)(void *
     format.setByteOrder(QAudioFormat::LittleEndian);
     format.setSampleType(QAudioFormat::Float);
     audio = new QAudioOutput(format);
+    audio->setBufferSize(audio->format().bytesPerFrame() * audio->format().sampleRate());
 
     l_PluginInit = 1;
     VolIsMuted = 0;
@@ -156,8 +157,8 @@ EXPORT void CALL AiLenChanged( void )
 
         src_process(src_state, &data);
 
-        int audio_queue = audio->bytesFree();
-        int acceptable_latency = (samplerate * 0.020) * audio->format().bytesPerFrame();
+        int audio_queue = audio->bufferSize() - audio->bytesFree();
+        int acceptable_latency = (samplerate * 0.200) * audio->format().bytesPerFrame();
         int min_latency = (samplerate * 0.020) * audio->format().bytesPerFrame();
         unsigned int diff = 0;
         if (audio_queue > acceptable_latency)
