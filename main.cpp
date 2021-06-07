@@ -143,20 +143,21 @@ EXPORT void CALL AiLenChanged( void )
 
     if (!VolIsMuted && !ff)
     {
+        float samplerate = (float)audio->format().sampleRate();
         src_short_to_float_array ((short*)primaryBuffer, convert_buffer, LenReg / 2) ;
         SRC_DATA data;
         data.data_in = convert_buffer;
         data.input_frames = LenReg / 4;
         data.data_out = output_buffer;
         data.output_frames = sizeof(output_buffer) / 8;
-        data.src_ratio = (float)audio->format().sampleRate() / GameFreq;
+        data.src_ratio = samplerate / GameFreq;
         data.end_of_input = 0;
 
         src_process(src_state, &data);
         
         int audio_queue = audio->bytesFree();
-        int acceptable_latency = audio->format().bytesPerFrame() * 30;
-        int min_latency = audio->format().bytesPerFrame() * 3;
+        int acceptable_latency = (samplerate * 0.020) * audio->format().bytesPerFrame();
+        int min_latency = (samplerate * 0.020) * audio->format().bytesPerFrame();
         unsigned int diff = 0;
         if (audio_queue > acceptable_latency)
         {
