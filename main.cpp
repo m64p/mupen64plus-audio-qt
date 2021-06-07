@@ -21,7 +21,7 @@ static SRC_STATE *src_state;
 static QAudioOutput* audio;
 static QIODevice* audio_buffer;
 
-EXPORT m64p_error CALL PluginStartup(m64p_dynlib_handle CoreLibHandle, void *Context, void (*DebugCallback)(void *, int, const char *))
+EXPORT m64p_error CALL PluginStartup(m64p_dynlib_handle, void *, void (*DebugCallback)(void *, int, const char *))
 {
     if (l_PluginInit)
         return M64ERR_ALREADY_INIT;
@@ -157,7 +157,7 @@ EXPORT void CALL AiLenChanged( void )
         int audio_queue = audio->bytesFree();
         int acceptable_latency = audio->format().bytesPerFrame() * 30;
         int min_latency = audio->format().bytesPerFrame() * 3;
-        int diff = 0;
+        unsigned int diff = 0;
         if (audio_queue > acceptable_latency)
         {
             diff = audio_queue - acceptable_latency;
