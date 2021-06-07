@@ -15,28 +15,28 @@ static unsigned char primaryBuffer[0x40000];
 static float output_buffer[0x20000];
 static float convert_buffer[0x20000];
 static int VolIsMuted = 0;
-static unsigned int paused = 0;
 static int ff = 0;
 static SRC_STATE *src_state;
 static QAudioOutput* audio;
 static QIODevice* audio_buffer;
 
-EXPORT m64p_error CALL PluginStartup(m64p_dynlib_handle, void *, void (*)(void *, int, const char *))
+EXPORT m64p_error CALL PluginStartup(m64p_dynlib_handle, void * object, void (*)(void *, int, const char *))
 {
     if (l_PluginInit)
         return M64ERR_ALREADY_INIT;
 
     QAudioFormat format;
-    // Set up the format, eg.
     format.setSampleRate(48000);
     format.setChannelCount(2);
     format.setSampleSize(32);
     format.setCodec("audio/pcm");
     format.setByteOrder(QAudioFormat::LittleEndian);
     format.setSampleType(QAudioFormat::Float);
-    audio = new QAudioOutput(format);
-    audio->setBufferSize(audio->format().bytesPerFrame() * audio->format().sampleRate());
+    audio = new QAudioOutput(format, (QObject*)object);
 
+    int acceptable_latency = ((float)audio->format().sampleRate() * 0.200) * audio->format().bytesPerFrame();
+    audio->setBufferSize(acceptable_latency);
+    audio_buffer = audio->start();
     l_PluginInit = 1;
     VolIsMuted = 0;
     ff = 0;
@@ -49,6 +49,7 @@ EXPORT m64p_error CALL PluginShutdown(void)
     if (!l_PluginInit)
         return M64ERR_NOT_INIT;
 
+    audio->stop();
     audio->deleteLater();
 
     if (src_state) src_state = src_delete(src_state);
@@ -84,10 +85,6 @@ EXPORT m64p_error CALL PluginGetVersion(m64p_plugin_type *PluginType, int *Plugi
 
 void InitAudio()
 {
-    audio_buffer = audio->start();
-
-    paused = 0;
-
     if (src_state) src_state = src_delete(src_state);
     int error;
     src_state = src_new (SRC_SINC_MEDIUM_QUALITY, 2, &error);
@@ -95,7 +92,6 @@ void InitAudio()
 
 void CloseAudio()
 {
-    audio->stop();
     if (src_state) src_state = src_delete(src_state);
     src_state = NULL;
 }
@@ -157,32 +153,9 @@ EXPORT void CALL AiLenChanged( void )
 
         src_process(src_state, &data);
 
-        int audio_queue = audio->bufferSize() - audio->bytesFree();
-        int acceptable_latency = (samplerate * 0.200) * audio->format().bytesPerFrame();
-        int min_latency = (samplerate * 0.020) * audio->format().bytesPerFrame();
-        unsigned int diff = 0;
-        if (audio_queue > acceptable_latency)
-        {
-            diff = audio_queue - acceptable_latency;
-            diff &= ~7;
-        }
-        else if (!paused && audio_queue < min_latency)
-        {
-            audio->suspend();
-            paused = 1;
-        }
-        else if (paused && audio_queue >= min_latency)
-        {
-            audio->resume();
-            paused = 0;
-        }
-
-        unsigned int output_length = data.output_frames_gen * 8;
-        if (output_length > diff)
-        {
-            int len = output_length - diff;
-            audio_buffer->write((char*)output_buffer, len);
-        }
+        int output_length = data.output_frames_gen * 8;
+        if (output_length <= audio->bytesFree())
+            audio_buffer->write((char*)output_buffer, output_length);
     }
 }
 
